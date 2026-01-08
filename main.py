@@ -14,6 +14,10 @@ def on_startup():
 def read_root():
     return {"message": "Hotel Reservation API is running"}
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 # --- Users ---
 @app.post("/users", response_model=User)
 def create_user(user: User, session: Session = Depends(get_session)):
