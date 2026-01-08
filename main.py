@@ -75,6 +75,29 @@ def read_reservation(reservation_id: int, session: Session = Depends(get_session
         raise HTTPException(status_code=404, detail="Reservation not found")
     return reservation
 
+@app.put("/reservations/{reservation_id}/cancel", response_model=Reservation)
+def cancel_reservation(reservation_id: int, session: Session = Depends(get_session)):
+    reservation = session.get(Reservation, reservation_id)
+    if not reservation:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+    
+    if reservation.status == "cancelled":
+        return reservation # Already cancelled
+
+    # Update reservation status
+    reservation.status = "cancelled"
+    session.add(reservation)
+
+    # Free up the room
+    room = session.get(Room, reservation.room_id)
+    if room:
+        room.is_available = True
+        session.add(room)
+    
+    session.commit()
+    session.refresh(reservation)
+    return reservation
+
 # --- Complaints ---
 @app.post("/complaints", response_model=Complaint)
 def create_complaint(complaint: Complaint, session: Session = Depends(get_session)):
