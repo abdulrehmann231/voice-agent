@@ -1,6 +1,9 @@
 import os
 from sqlmodel import SQLModel, create_engine, Session
 from typing import Generator
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Render provides DATABASE_URL in environment variables
 # Default to a local postgres url for testing if env var not set
