@@ -27,6 +27,13 @@ def read_users(session: Session = Depends(get_session)):
     users = session.exec(select(User)).all()
     return users
 
+@app.get("/users/lookup", response_model=User)
+def lookup_user(email: str, session: Session = Depends(get_session)):
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+         raise HTTPException(status_code=404, detail="User not found")
+    return user
+
 # --- Rooms ---
 @app.post("/rooms", response_model=Room)
 def create_room(room: Room, session: Session = Depends(get_session)):
