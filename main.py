@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Body
 from sqlmodel import Session, select
 from typing import List, Optional
 from database import init_db, get_session
