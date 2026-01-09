@@ -79,6 +79,17 @@ def create_reservation(reservation: Reservation, session: Session = Depends(get_
     session.refresh(reservation)
     return reservation
 
+@app.get("/reservations/lookup", response_model=List[Reservation])
+def lookup_reservations_by_email(email: str, session: Session = Depends(get_session)):
+    # 1. Find User
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # 2. Find Reservations
+    reservations = session.exec(select(Reservation).where(Reservation.user_id == user.id)).all()
+    return reservations
+
 @app.get("/reservations/{reservation_id}", response_model=Reservation)
 def read_reservation(reservation_id: int, session: Session = Depends(get_session)):
     reservation = session.get(Reservation, reservation_id)
