@@ -87,7 +87,7 @@ def read_reservation(reservation_id: int, session: Session = Depends(get_session
     return reservation
 
 @app.put("/reservations/{reservation_id}/cancel", response_model=Reservation)
-def cancel_reservation(reservation_id: int, session: Session = Depends(get_session)):
+def cancel_reservation(reservation_id: int, reason: str = Body(None), session: Session = Depends(get_session)):
     reservation = session.get(Reservation, reservation_id)
     if not reservation:
         raise HTTPException(status_code=404, detail="Reservation not found")
