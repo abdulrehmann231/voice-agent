@@ -60,7 +60,15 @@ def create_reservation(reservation: Reservation, session: Session = Depends(get_
     # Check if room is available (basic check)
     room = session.get(Room, reservation.room_id)
     if not room:
+        # Fallback: Check if room_id was actually the room number (name)
+        # Convert to string just in case, though room_id coming in is int
+        room = session.exec(select(Room).where(Room.name == str(reservation.room_id))).first()
+        
+    if not room:
         raise HTTPException(status_code=404, detail="Room not found")
+        
+    # Correct the room_id in the reservation object if we found it by name
+    reservation.room_id = room.id
     if not room.is_available:
          raise HTTPException(status_code=400, detail="Room is not available")
     
