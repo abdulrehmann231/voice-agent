@@ -2,7 +2,15 @@ from fastapi import FastAPI, Depends, HTTPException, Body
 from sqlmodel import Session, select
 from typing import List, Optional
 from database import init_db, get_session
-from models import User, Room, Reservation, Complaint
+from models import (
+    User,
+    Room,
+    Reservation,
+    Complaint,
+    Dentist,
+    DentalService,
+    DentalAppointment,
+)
 
 app = FastAPI(title="Hotel Reservation API")
 
@@ -140,3 +148,150 @@ def create_complaint(complaint: Complaint, session: Session = Depends(get_sessio
 def read_complaints(session: Session = Depends(get_session)):
     complaints = session.exec(select(Complaint)).all()
     return complaints
+
+
+# --- Dentists ---
+@app.post("/dentists", response_model=Dentist)
+def create_dentist(dentist: Dentist, session: Session = Depends(get_session)):
+    session.add(dentist)
+    session.commit()
+    session.refresh(dentist)
+    return dentist
+
+
+@app.get("/dentists", response_model=List[Dentist])
+def read_dentists(active_only: bool = False, session: Session = Depends(get_session)):
+    if active_only:
+        dentists = session.exec(select(Dentist).where(Dentist.is_active == True)).all()
+    else:
+        dentists = session.exec(select(Dentist)).all()
+    return dentists
+
+
+@app.get("/dentists/{dentist_id}", response_model=Dentist)
+def read_dentist(dentist_id: int, session: Session = Depends(get_session)):
+    dentist = session.get(Dentist, dentist_id)
+    if not dentist:
+        raise HTTPException(status_code=404, detail="Dentist not found")
+    return dentist
+
+
+# --- Dental Services ---
+@app.post("/dental-services", response_model=DentalService)
+def create_dental_service(service: DentalService, session: Session = Depends(get_session)):
+    session.add(service)
+    session.commit()
+    session.refresh(service)
+    return service
+
+
+@app.get("/dental-services", response_model=List[DentalService])
+def read_dental_services(active_only: bool = False, session: Session = Depends(get_session)):
+    if active_only:
+        services = session.exec(select(DentalService).where(DentalService.is_active == True)).all()
+    else:
+        services = session.exec(select(DentalService)).all()
+    return services
+
+
+@app.get("/dental-services/{service_id}", response_model=DentalService)
+def read_dental_service(service_id: int, session: Session = Depends(get_session)):
+    service = session.get(DentalService, service_id)
+    if not service:
+        raise HTTPException(status_code=404, detail="Dental service not found")
+    return service
+
+
+# --- Dental Appointments ---
+@app.post("/dental-appointments", response_model=DentalAppointment)
+def create_dental_appointment(
+    appointment: DentalAppointment, session: Session = Depends(get_session)
+):
+    user = session.get(User, appointment.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    dentist = session.get(Dentist, appointment.dentist_id)
+    if not dentist or not dentist.is_active:
+        raise HTTPException(status_code=404, detail="Dentist not available")
+
+    service = session.get(DentalService, appointment.service_id)
+    if not service or not service.is_active:
+        raise HTTPException(status_code=404, detail="Dental service not available")
+
+    existing = session.exec(
+        select(DentalAppointment).where(
+            DentalAppointment.dentist_id == appointment.dentist_id,
+            DentalAppointment.appointment_at == appointment.appointment_at,
+            DentalAppointment.status == "scheduled",
+        )
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="Dentist already has a scheduled appointment at this time",
+        )
+
+    session.add(appointment)
+    session.commit()
+    session.refresh(appointment)
+    return appointment
+
+
+@app.get("/dental-appointments", response_model=List[DentalAppointment])
+def read_dental_appointments(
+    dentist_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    status: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
+    query = select(DentalAppointment)
+    if dentist_id is not None:
+        query = query.where(DentalAppointment.dentist_id == dentist_id)
+    if user_id is not None:
+        query = query.where(DentalAppointment.user_id == user_id)
+    if status is not None:
+        query = query.where(DentalAppointment.status == status)
+    appointments = session.exec(query).all()
+    return appointments
+
+
+@app.get("/dental-appointments/{appointment_id}", response_model=DentalAppointment)
+def read_dental_appointment(appointment_id: int, session: Session = Depends(get_session)):
+    appointment = session.get(DentalAppointment, appointment_id)
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Dental appointment not found")
+    return appointment
+
+
+@app.put("/dental-appointments/{appointment_id}/cancel", response_model=DentalAppointment)
+def cancel_dental_appointment(
+    appointment_id: int, reason: str = Body(None, embed=True), session: Session = Depends(get_session)
+):
+    appointment = session.get(DentalAppointment, appointment_id)
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Dental appointment not found")
+    if appointment.status == "cancelled":
+        return appointment
+    appointment.status = "cancelled"
+    if reason:
+        if appointment.notes:
+            appointment.notes = f"{appointment.notes}\nCancellation reason: {reason}"
+        else:
+            appointment.notes = f"Cancellation reason: {reason}"
+    session.add(appointment)
+    session.commit()
+    session.refresh(appointment)
+    return appointment
+
+
+@app.put("/dental-appointments/{appointment_id}/complete", response_model=DentalAppointment)
+def complete_dental_appointment(appointment_id: int, session: Session = Depends(get_session)):
+    appointment = session.get(DentalAppointment, appointment_id)
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Dental appointment not found")
+    appointment.status = "completed"
+    session.add(appointment)
+    session.commit()
+    session.refresh(appointment)
+    return appointment
