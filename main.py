@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Body
-from sqlmodel import Session, select
+from sqlmodel import Session, SQLModel, select
 from typing import List, Optional
 from database import init_db, get_session
 from models import (
@@ -13,6 +13,13 @@ from models import (
 )
 
 app = FastAPI(title="Hotel Reservation API")
+
+
+class RescheduleDentalAppointmentRequest(SQLModel):
+    appointment_at: str
+    dentist_id: Optional[int] = None
+    service_id: Optional[int] = None
+    notes: Optional[str] = None
 
 @app.on_event("startup")
 def on_startup():
@@ -44,6 +51,14 @@ def lookup_user(email: str, session: Session = Depends(get_session)):
     user = session.exec(select(User).where(User.email == email)).first()
     if not user:
          raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@app.get("/users/lookup-by-phone", response_model=User)
+def lookup_user_by_phone(phone: str, session: Session = Depends(get_session)):
+    user = session.exec(select(User).where(User.phone == phone)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
     return user
 
 # --- Rooms ---
@@ -256,6 +271,33 @@ def read_dental_appointments(
     return appointments
 
 
+@app.get("/dental-appointments/availability")
+def dental_appointment_availability(
+    dentist_id: int, date: str, session: Session = Depends(get_session)
+):
+    dentist = session.get(Dentist, dentist_id)
+    if not dentist or not dentist.is_active:
+        raise HTTPException(status_code=404, detail="Dentist not available")
+
+    scheduled = session.exec(
+        select(DentalAppointment).where(
+            DentalAppointment.dentist_id == dentist_id,
+            DentalAppointment.status == "scheduled",
+        )
+    ).all()
+
+    booked_slots = sorted(
+        [a.appointment_at for a in scheduled if a.appointment_at.startswith(date)]
+    )
+
+    return {
+        "dentist_id": dentist_id,
+        "date": date,
+        "booked_slots": booked_slots,
+        "message": "Slots in booked_slots are unavailable for this dentist on the requested date.",
+    }
+
+
 @app.get("/dental-appointments/{appointment_id}", response_model=DentalAppointment)
 def read_dental_appointment(appointment_id: int, session: Session = Depends(get_session)):
     appointment = session.get(DentalAppointment, appointment_id)
@@ -291,6 +333,58 @@ def complete_dental_appointment(appointment_id: int, session: Session = Depends(
     if not appointment:
         raise HTTPException(status_code=404, detail="Dental appointment not found")
     appointment.status = "completed"
+    session.add(appointment)
+    session.commit()
+    session.refresh(appointment)
+    return appointment
+
+
+@app.put("/dental-appointments/{appointment_id}/reschedule", response_model=DentalAppointment)
+def reschedule_dental_appointment(
+    appointment_id: int,
+    payload: RescheduleDentalAppointmentRequest,
+    session: Session = Depends(get_session),
+):
+    appointment = session.get(DentalAppointment, appointment_id)
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Dental appointment not found")
+    if appointment.status == "cancelled":
+        raise HTTPException(
+            status_code=400, detail="Cancelled appointments cannot be rescheduled"
+        )
+
+    new_dentist_id = payload.dentist_id or appointment.dentist_id
+    new_service_id = payload.service_id or appointment.service_id
+
+    dentist = session.get(Dentist, new_dentist_id)
+    if not dentist or not dentist.is_active:
+        raise HTTPException(status_code=404, detail="Dentist not available")
+
+    service = session.get(DentalService, new_service_id)
+    if not service or not service.is_active:
+        raise HTTPException(status_code=404, detail="Dental service not available")
+
+    conflict = session.exec(
+        select(DentalAppointment).where(
+            DentalAppointment.id != appointment.id,
+            DentalAppointment.dentist_id == new_dentist_id,
+            DentalAppointment.appointment_at == payload.appointment_at,
+            DentalAppointment.status == "scheduled",
+        )
+    ).first()
+    if conflict:
+        raise HTTPException(
+            status_code=400,
+            detail="Dentist already has a scheduled appointment at this time",
+        )
+
+    appointment.appointment_at = payload.appointment_at
+    appointment.dentist_id = new_dentist_id
+    appointment.service_id = new_service_id
+    appointment.status = "scheduled"
+    if payload.notes is not None:
+        appointment.notes = payload.notes
+
     session.add(appointment)
     session.commit()
     session.refresh(appointment)

@@ -1,0 +1,411 @@
+[
+  {
+    "type": "webhook",
+    "name": "findPatientByPhone",
+    "description": "Look up an existing patient by their phone number. Use this at the start of a conversation to identify who is calling. Ask the caller for their phone number and use this tool to find their record.",
+    "api_schema": {
+      "url": "https://voice-agent-production-e483.up.railway.app/users/lookup-by-phone",
+      "method": "GET",
+      "path_params_schema": [],
+      "query_params_schema": [
+        {
+          "id": "phone_param",
+          "name": "phone",
+          "type": "string",
+          "description": "The patient's phone number, e.g. +1-555-0101",
+          "required": true
+        }
+      ],
+      "request_body_schema": null,
+      "request_headers": [],
+      "content_type": "application/json",
+      "auth_connection": null
+    },
+    "response_timeout_secs": 20,
+    "dynamic_variables": {
+      "dynamic_variable_placeholders": {}
+    },
+    "assignments": [],
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "auto",
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "tool_error_handling_mode": "auto",
+    "response_mocks": []
+  },
+  {
+    "type": "webhook",
+    "name": "createPatient",
+    "description": "Register a new patient in the system. Use this only when findPatientByPhone returned no results and the caller confirms they want to register. Collect their full name, phone number, and optionally email before calling.",
+    "api_schema": {
+      "url": "https://voice-agent-production-e483.up.railway.app/users",
+      "method": "POST",
+      "path_params_schema": [],
+      "query_params_schema": [],
+      "request_body_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Full name of the patient"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number of the patient"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address of the patient (optional)"
+          }
+        },
+        "required": ["name", "phone"]
+      },
+      "request_headers": [],
+      "content_type": "application/json",
+      "auth_connection": null
+    },
+    "response_timeout_secs": 20,
+    "dynamic_variables": {
+      "dynamic_variable_placeholders": {}
+    },
+    "assignments": [],
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "auto",
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "tool_error_handling_mode": "auto",
+    "response_mocks": []
+  },
+  {
+    "type": "webhook",
+    "name": "listDentists",
+    "description": "Get a list of all available dentists at the clinic. Use this when the patient asks which doctors are available, wants to choose a dentist, or needs to know specialties offered.",
+    "api_schema": {
+      "url": "https://voice-agent-production-e483.up.railway.app/dentists?active_only=true",
+      "method": "GET",
+      "path_params_schema": [],
+      "query_params_schema": [],
+      "request_body_schema": null,
+      "request_headers": [],
+      "content_type": "application/json",
+      "auth_connection": null
+    },
+    "response_timeout_secs": 20,
+    "dynamic_variables": {
+      "dynamic_variable_placeholders": {}
+    },
+    "assignments": [],
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "auto",
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "tool_error_handling_mode": "auto",
+    "response_mocks": []
+  },
+  {
+    "type": "webhook",
+    "name": "listDentalServices",
+    "description": "Get a list of all dental services offered by the clinic, including prices and durations. Use this when the patient asks what services are available, how much something costs, or how long a procedure takes.",
+    "api_schema": {
+      "url": "https://voice-agent-production-e483.up.railway.app/dental-services?active_only=true",
+      "method": "GET",
+      "path_params_schema": [],
+      "query_params_schema": [],
+      "request_body_schema": null,
+      "request_headers": [],
+      "content_type": "application/json",
+      "auth_connection": null
+    },
+    "response_timeout_secs": 20,
+    "dynamic_variables": {
+      "dynamic_variable_placeholders": {}
+    },
+    "assignments": [],
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "auto",
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "tool_error_handling_mode": "auto",
+    "response_mocks": []
+  },
+  {
+    "type": "webhook",
+    "name": "checkAvailability",
+    "description": "Check a dentist's availability for a specific date. Returns the list of already-booked time slots so you can tell the patient which times are taken. Use this before booking to confirm the requested slot is free.",
+    "api_schema": {
+      "url": "https://voice-agent-production-e483.up.railway.app/dental-appointments/availability",
+      "method": "GET",
+      "path_params_schema": [],
+      "query_params_schema": [
+        {
+          "id": "dentist_id_param",
+          "name": "dentist_id",
+          "type": "integer",
+          "description": "The ID of the dentist to check availability for",
+          "required": true
+        },
+        {
+          "id": "date_param",
+          "name": "date",
+          "type": "string",
+          "description": "The date to check in YYYY-MM-DD format, e.g. 2026-02-15",
+          "required": true
+        }
+      ],
+      "request_body_schema": null,
+      "request_headers": [],
+      "content_type": "application/json",
+      "auth_connection": null
+    },
+    "response_timeout_secs": 20,
+    "dynamic_variables": {
+      "dynamic_variable_placeholders": {}
+    },
+    "assignments": [],
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "auto",
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "tool_error_handling_mode": "auto",
+    "response_mocks": []
+  },
+  {
+    "type": "webhook",
+    "name": "bookDentalAppointment",
+    "description": "Book a new dental appointment. Use this only after confirming: the patient's identity (user_id), the chosen dentist (dentist_id), the chosen service (service_id), and the desired date/time. Always confirm all details with the patient before calling this tool.",
+    "api_schema": {
+      "url": "https://voice-agent-production-e483.up.railway.app/dental-appointments",
+      "method": "POST",
+      "path_params_schema": [],
+      "query_params_schema": [],
+      "request_body_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "description": "The patient's user ID from findPatientByPhone or createPatient"
+          },
+          "dentist_id": {
+            "type": "integer",
+            "description": "The dentist's ID from listDentists"
+          },
+          "service_id": {
+            "type": "integer",
+            "description": "The dental service ID from listDentalServices"
+          },
+          "appointment_at": {
+            "type": "string",
+            "description": "The appointment date and time in ISO format, e.g. 2026-02-15T10:30:00"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Any special notes or requests from the patient (optional)"
+          }
+        },
+        "required": ["user_id", "dentist_id", "service_id", "appointment_at"]
+      },
+      "request_headers": [],
+      "content_type": "application/json",
+      "auth_connection": null
+    },
+    "response_timeout_secs": 20,
+    "dynamic_variables": {
+      "dynamic_variable_placeholders": {}
+    },
+    "assignments": [],
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "auto",
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "tool_error_handling_mode": "auto",
+    "response_mocks": []
+  },
+  {
+    "type": "webhook",
+    "name": "listPatientAppointments",
+    "description": "Get all appointments for a specific patient. Use this when the patient asks about their upcoming or past bookings, or when you need to find an appointment ID for cancellation or rescheduling.",
+    "api_schema": {
+      "url": "https://voice-agent-production-e483.up.railway.app/dental-appointments",
+      "method": "GET",
+      "path_params_schema": [],
+      "query_params_schema": [
+        {
+          "id": "user_id_param",
+          "name": "user_id",
+          "type": "integer",
+          "description": "The patient's user ID",
+          "required": true
+        },
+        {
+          "id": "status_param",
+          "name": "status",
+          "type": "string",
+          "description": "Filter by status: scheduled, completed, or cancelled (optional)",
+          "required": false
+        }
+      ],
+      "request_body_schema": null,
+      "request_headers": [],
+      "content_type": "application/json",
+      "auth_connection": null
+    },
+    "response_timeout_secs": 20,
+    "dynamic_variables": {
+      "dynamic_variable_placeholders": {}
+    },
+    "assignments": [],
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "auto",
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "tool_error_handling_mode": "auto",
+    "response_mocks": []
+  },
+  {
+    "type": "webhook",
+    "name": "cancelDentalAppointment",
+    "description": "Cancel an existing dental appointment. Use this only after confirming the appointment details with the patient and receiving explicit confirmation that they want to cancel. Always tell the patient which appointment you are about to cancel before proceeding.",
+    "api_schema": {
+      "url": "https://voice-agent-production-e483.up.railway.app/dental-appointments/{appointment_id}/cancel",
+      "method": "PUT",
+      "path_params_schema": [
+        {
+          "id": "appointment_id_param",
+          "name": "appointment_id",
+          "type": "integer",
+          "description": "The ID of the appointment to cancel",
+          "required": true
+        }
+      ],
+      "query_params_schema": [],
+      "request_body_schema": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "The reason for cancellation provided by the patient (optional)"
+          }
+        },
+        "required": []
+      },
+      "request_headers": [],
+      "content_type": "application/json",
+      "auth_connection": null
+    },
+    "response_timeout_secs": 20,
+    "dynamic_variables": {
+      "dynamic_variable_placeholders": {}
+    },
+    "assignments": [],
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "auto",
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "tool_error_handling_mode": "auto",
+    "response_mocks": []
+  },
+  {
+    "type": "webhook",
+    "name": "rescheduleDentalAppointment",
+    "description": "Reschedule an existing dental appointment to a new date/time. Optionally change the dentist or service. Use this when a patient wants to move their appointment. Confirm the new date/time with the patient before calling.",
+    "api_schema": {
+      "url": "https://voice-agent-production-e483.up.railway.app/dental-appointments/{appointment_id}/reschedule",
+      "method": "PUT",
+      "path_params_schema": [
+        {
+          "id": "appointment_id_param",
+          "name": "appointment_id",
+          "type": "integer",
+          "description": "The ID of the appointment to reschedule",
+          "required": true
+        }
+      ],
+      "query_params_schema": [],
+      "request_body_schema": {
+        "type": "object",
+        "properties": {
+          "appointment_at": {
+            "type": "string",
+            "description": "The new appointment date and time in ISO format, e.g. 2026-02-20T14:00:00"
+          },
+          "dentist_id": {
+            "type": "integer",
+            "description": "New dentist ID if the patient wants to switch dentist (optional)"
+          },
+          "service_id": {
+            "type": "integer",
+            "description": "New service ID if the patient wants to change service (optional)"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Updated notes for the appointment (optional)"
+          }
+        },
+        "required": ["appointment_at"]
+      },
+      "request_headers": [],
+      "content_type": "application/json",
+      "auth_connection": null
+    },
+    "response_timeout_secs": 20,
+    "dynamic_variables": {
+      "dynamic_variable_placeholders": {}
+    },
+    "assignments": [],
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "auto",
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "tool_error_handling_mode": "auto",
+    "response_mocks": []
+  },
+  {
+    "type": "webhook",
+    "name": "createComplaint",
+    "description": "File a complaint or feedback on behalf of the patient. Use this when the patient reports an issue, expresses dissatisfaction, or wants to lodge a formal complaint. Capture their concern in detail.",
+    "api_schema": {
+      "url": "https://voice-agent-production-e483.up.railway.app/complaints",
+      "method": "POST",
+      "path_params_schema": [],
+      "query_params_schema": [],
+      "request_body_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "description": "The patient's user ID"
+          },
+          "details": {
+            "type": "string",
+            "description": "Detailed description of the complaint or issue"
+          }
+        },
+        "required": ["user_id", "details"]
+      },
+      "request_headers": [],
+      "content_type": "application/json",
+      "auth_connection": null
+    },
+    "response_timeout_secs": 20,
+    "dynamic_variables": {
+      "dynamic_variable_placeholders": {}
+    },
+    "assignments": [],
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "auto",
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "tool_error_handling_mode": "auto",
+    "response_mocks": []
+  }
+]
